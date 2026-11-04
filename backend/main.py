@@ -7,7 +7,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request, UploadFile, File, 
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, inspect, select, MetaData, Table
 
 from database import Base, engine, get_db, SessionLocal
 from models import Citizen, Admin, Department, Worker, Complaint, Assignment, ComplaintStatusHistory
@@ -348,3 +348,43 @@ def complaint_history(complaint_id: int, user=Depends(current_user), db: Session
     return [{"old_status": h.old_status, "new_status": h.new_status,
              "changed_by": h.changed_by,
              "changed_at": h.changed_at.isoformat() if h.changed_at else None} for h in rows]
+
+
+@app.get("/api/admin/database")
+def admin_database_view(
+    table: str = "complaints",
+    limit: int = 100,
+    user=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Return a limited, admin-only view of database tables without password hashes."""
+    allowed_tables = {
+        "citizens", "admins", "departments", "workers",
+        "complaints", "assignments", "complaint_status_history",
+    }
+    if table not in allowed_tables:
+        raise HTTPException(404, "Table not found")
+    limit = max(1, min(limit, 100))
+    inspector = inspect(engine)
+    if table not in inspector.get_table_names():
+        raise HTTPException(404, "Table not found in database")
+
+    metadata = MetaData()
+    db_table = Table(table, metadata, autoload_with=engine)
+    hidden_columns = {"password_hash"}
+    columns = [column.name for column in db_table.columns if column.name not in hidden_columns]
+    statement = select(*(db_table.c[name] for name in columns)).limit(limit)
+    result = db.execute(statement)
+    rows = []
+    for record in result.mappings().all():
+        rows.append({
+            key: value.isoformat() if hasattr(value, "isoformat") else value
+            for key, value in record.items()
+        })
+    return {
+        "table": table,
+        "columns": columns,
+        "total_records": db.execute(select(func.count()).select_from(db_table)).scalar() or 0,
+        "shown_records": len(rows),
+        "rows": rows,
+    }

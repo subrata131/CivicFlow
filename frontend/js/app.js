@@ -442,11 +442,29 @@ async function loadAdmin() {
     $("#statProgress").textContent = stats["In Progress"];
     $("#statResolved").textContent = stats.Resolved;
     renderAdminTable();
+    loadDatabaseTable();
     $("#workersList").innerHTML = w.map(x => `<div><b>${escapeHtml(x.worker_name)}</b> · ${escapeHtml(x.department || "No department")} · ${escapeHtml(x.phone)}</div>`).join("") || empty("No workers added.");
     $("#departmentsList").innerHTML = d.map(x => `<div>${escapeHtml(x.department_name)}</div>`).join("") || empty("No departments.");
     $("#departmentSelect").innerHTML = d.map(x => `<option value="${x.department_id}">${escapeHtml(x.department_name)}</option>`).join("");
   } catch (e) {
     toast(e.message);
+  }
+}
+
+
+async function loadDatabaseTable() {
+  const tableSelect = $("#databaseTable");
+  const output = $("#databaseRecords");
+  if (!tableSelect || !output) return;
+  output.innerHTML = "Loading database records...";
+  try {
+    const data = await request(`/api/admin/database?table=${encodeURIComponent(tableSelect.value)}&limit=100`);
+    $("#databaseSummary").textContent = `Table: ${data.table} · Total records: ${data.total_records} · Showing: ${data.shown_records} (maximum 100)`;
+    if (!data.rows.length) { output.innerHTML = empty("No records in this table yet."); return; }
+    output.innerHTML = `<table><thead><tr>${data.columns.map(c => `<th>${escapeHtml(c)}</th>`).join("")}</tr></thead><tbody>${data.rows.map(row => `<tr>${data.columns.map(c => `<td>${escapeHtml(row[c] === null ? "—" : row[c])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  } catch (error) {
+    output.textContent = error.message;
+    $("#databaseSummary").textContent = "Could not load database records.";
   }
 }
 
@@ -483,6 +501,8 @@ function renderAdminTable() {
 
 $("#adminSearch").addEventListener("input", renderAdminTable);
 $("#refreshAdmin").onclick = loadAdmin;
+$("#refreshDatabase").onclick = loadDatabaseTable;
+$("#databaseTable").addEventListener("change", loadDatabaseTable);
 $("#workerForm").addEventListener("submit", async e => {
   e.preventDefault();
   try {
