@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicFlow | Waterlogging Tracker</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"> <span class="brand-icon">◈</span> CivicFlow</a>
+  <nav><a href="#how">How it works</a><button id="logoutBtn" class="ghost hidden">Logout</button></nav>
+</header>
+<main class="shell">
+  <section id="authView" class="hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">SMARTER CITY · CLEANER STREETS</span>
+      <h1>Report it.<br><span>Track it.</span><br>Get it fixed.</h1>
+      <p>A simple way for citizens to report waterlogging and for municipal teams to take action.</p>
+      <div class="hero-points"><span>✓ Report problem locations</span><span>✓ Follow complaint progress</span><span>✓ Connect with municipal teams</span></div>
+    </div>
+    <div class="auth-card">
+      <div class="role-switcher" role="group" aria-label="Select User Role">
+        <button type="button" class="role-switch-btn active" id="roleBtnCitizen" data-login-role="citizen">
+          <span class="role-icon">👤</span>
+          <span>Citizen</span>
+        </button>
+        <button type="button" class="role-switch-btn" id="roleBtnOfficer" data-login-role="officer">
+          <span class="role-icon">🏛️</span>
+          <span>Department Officer</span>
+        </button>
+      </div>
+
+      <div class="tabs" id="authTabs">
+        <button type="button" class="tab active" data-tab="login">Sign in</button>
+        <button type="button" class="tab" data-tab="register">Create account</button>
+      </div>
+
+      <form id="loginForm" class="form">
+        <input type="hidden" name="role" id="loginRoleInput" value="citizen">
+        <h2 id="loginTitle">Citizen sign in</h2>
+        <p class="muted" id="loginSubtitle">Sign in to report waterlogging and track resolution in your area.</p>
+        <label id="loginIdentifierLabel">
+          <span id="loginIdentifierText">Email address</span>
+          <input id="loginIdentifierInput" name="email" type="email" required placeholder="you@example.com">
+        </label>
+        <label>Password
+          <input name="password" type="password" required placeholder="Enter password">
+        </label>
+        <button class="primary full" id="loginSubmitBtn">Sign in as Citizen</button>
+        <p class="hint" id="loginHint">Need to report an issue? <a href="#" id="toRegisterLink" class="inline-link">Create a citizen account</a></p>
+      </form>
+
+      <form id="registerForm" class="form hidden">
+        <h2>Create citizen account</h2>
+        <p class="muted">Register to submit and track waterlogging complaints in your locality.</p>
+        <label>Full name<input name="full_name" required minlength="2" placeholder="Your name"></label>
+        <label>Email<input name="email" type="email" required placeholder="you@example.com"></label>
+        <label>Phone<input name="phone" required placeholder="Phone number"></label>
+        <label>Address <span class="optional">Optional</span><input name="address" placeholder="Area / locality"></label>
+        <label>Password<input name="password" type="password" required minlength="8" placeholder="At least 8 characters"></label>
+        <button class="primary full">Create account</button>
+        <p class="hint">Already registered? <a href="#" id="toLoginLink" class="inline-link">Sign in</a></p>
+      </form>
+      <div id="authMessage" class="message"></div>
+    </div>
+  </section>
+
+  <section id="citizenView" class="hidden">
+    <div class="page-heading"><div><span class="eyebrow">CITIZEN PORTAL</span><h1>Hello, <span id="citizenName">Citizen</span></h1><p class="muted">Report local waterlogging and keep an eye on progress.</p></div><button class="primary" id="showComplaintForm">＋ New complaint</button></div>
+    <div class="stats citizen-stats"><article><span>Total complaints</span><strong id="myTotal">0</strong></article><article><span>In progress</span><strong id="myProgress">0</strong></article><article><span>Resolved</span><strong id="myResolved">0</strong></article></div>
+    <div id="complaintFormCard" class="panel hidden"><div class="panel-title"><div><h2>Report waterlogging</h2><p class="muted">Share the location and what is happening.</p></div><button class="icon-btn" id="closeComplaintForm">✕</button></div>
+      <form id="complaintForm" class="form two-col">
+        <label class="wide">
+          <div class="field-label-split">
+            <span>Problem location</span>
+            <button type="button" id="detectLocationBtn" class="action-tag-btn" title="Use device GPS to auto-detect location">
+              <span class="btn-icon">📍</span> <span id="detectBtnText">Auto-detect location</span>
+            </button>
+          </div>
+          <input name="location" id="complaintLocation" required placeholder="Street, landmark, ward, area">
+          <div id="locationStatus" class="field-hint-text"></div>
+        </label>
+        <label class="wide">Description<textarea name="description" required minlength="10" rows="3" placeholder="Describe the waterlogging, its severity, water depth, and any nearby landmark..."></textarea></label>
+        <label>Priority<select name="priority"><option>Medium</option><option>High</option><option>Low</option></select></label>
+        <label class="wide">
+          <span>Attach photo of waterlogging <span class="optional">(Optional)</span></span>
+          <div class="photo-upload-box" id="photoDropArea">
+            <input type="file" id="complaintPhotoInput" name="photo" accept="image/png, image/jpeg, image/jpg, image/webp" class="file-hidden">
+            <div id="photoPrompt" class="photo-prompt">
+              <span class="upload-icon">📷</span>
+              <div class="upload-details">
+                <strong>Click to upload photo</strong> or drag & drop here
+                <span class="upload-limit">PNG, JPG, WEBP · Max 10MB</span>
+              </div>
+            </div>
+            <div id="photoPreviewWrap" class="photo-preview-wrap hidden">
+              <img id="photoPreviewImg" src="" alt="Waterlogging preview" class="preview-thumb">
+              <div class="preview-actions">
+                <span id="photoFileName" class="photo-file-name"></span>
+                <button type="button" id="removePhotoBtn" class="remove-photo-pill">✕ Remove photo</button>
+              </div>
+            </div>
+          </div>
+        </label>
+        <div class="wide"><button class="primary" id="submitComplaintBtn">Submit complaint</button></div>
+      </form>
+    </div>
+    <div class="panel"><div class="panel-title"><div><h2>My complaints</h2><p class="muted">Your submitted reports and their latest status.</p></div><button class="secondary" id="refreshCitizen">Refresh</button></div><div id="myComplaints" class="table-wrap"></div></div>
+  </section>
+
+  <section id="adminView" class="hidden">
+    <div class="page-heading"><div><span class="eyebrow">MUNICIPAL CONTROL CENTRE</span><h1>Operations dashboard</h1><p class="muted">Review reports, assign field workers and resolve issues.</p></div><button class="secondary" id="refreshAdmin">↻ Refresh data</button></div>
+    <div class="stats"><article><span>Total complaints</span><strong id="statTotal">0</strong></article><article><span>Pending</span><strong id="statPending">0</strong></article><article><span>In progress</span><strong id="statProgress">0</strong></article><article><span>Resolved</span><strong id="statResolved">0</strong></article></div>
+    <div class="panel"><div class="panel-title"><div><h2>Complaint register</h2><p class="muted">All citizen reports in one place.</p></div><input id="adminSearch" class="search" placeholder="Search location or ID..."></div><div id="allComplaints" class="table-wrap"></div></div>
+    <div class="management-grid">
+      <div class="panel"><div class="panel-title"><div><h2>Field workers</h2><p class="muted">Manage municipal response teams.</p></div></div><form id="workerForm" class="form"><label>Worker name<input name="worker_name" required></label><label>Phone<input name="phone" required></label><label>Department<select name="department_id" id="departmentSelect" required></select></label><button class="primary">Add worker</button></form><div id="workersList" class="simple-list"></div></div>
+      <div class="panel"><div class="panel-title"><div><h2>Departments</h2><p class="muted">Municipal service units.</p></div></div><form id="departmentForm" class="form"><label>Department name<input name="department_name" required></label><label>Description<input name="description"></label><button class="primary">Add department</button></form><div id="departmentsList" class="simple-list"></div></div>
+    </div>
+  </section>
+  <section id="how" class="how"><span class="eyebrow">SIMPLE BY DESIGN</span><h2>From street report to real action.</h2><div class="steps"><div><b>01</b><h3>Report</h3><p>Citizens submit a location and a clear description.</p></div><div><b>02</b><h3>Assign</h3><p>Municipal administrators route the issue to a field worker.</p></div><div><b>03</b><h3>Resolve</h3><p>Progress is updated and the citizen can track the result.</p></div></div></section>
+</main>
+<footer> <span>© 2026 CivicFlow</span><span>Municipal Waterlogging Complaint Tracker · DBMS Project</span></footer>
+<div id="toast" class="toast"></div>
+
+<div id="photoModal" class="photo-modal hidden">
+  <div class="photo-modal-backdrop" id="photoModalBackdrop"></div>
+  <div class="photo-modal-content">
+    <div class="photo-modal-header">
+      <h3 id="photoModalTitle">Waterlogging Photo</h3>
+      <button type="button" class="icon-btn" id="closePhotoModalBtn">✕</button>
+    </div>
+    <div class="photo-modal-body">
+      <img id="photoModalImg" src="" alt="Waterlogging site evidence">
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body></html>
